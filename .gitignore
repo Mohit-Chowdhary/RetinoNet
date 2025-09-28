@@ -1,0 +1,6 @@
+datasets
+*.pth
+*.exe
+datasets/
+.history/
+.history
