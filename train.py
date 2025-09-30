@@ -3,36 +3,91 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import (
-    accuracy_score, f1_score, cohen_kappa_score,
-    roc_auc_score, classification_report, confusion_matrix
-)
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, cohen_kappa_score
 
 from PIL import Image
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
-from torchvision import transforms
-from torchvision.io import read_image
-
 from timm import create_model
 from torch.cuda.amp import autocast, GradScaler
+
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
 
 # =====================
 # CONFIG
 # =====================
 BATCH_SIZE = 4
-IMG_SIZE = 384
+IMG_SIZE = 448
 EPOCHS_HEAD = 2
-EPOCHS_FINE = 5
-LR = 1e-4
+EPOCHS_FINE = 15  # longer fine-tuning
+LR_HEAD = 1e-4
+LR_FINE = 1e-5
 WD = 1e-5
 NUM_CLASSES = 5
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 # =====================
-# CSV LOADING
+# DATA AUGMENTATIONS
+# =====================
+train_transforms = A.Compose([
+    # Use a single tuple `size=(H, W)` exactly
+    A.RandomResizedCrop(size=(IMG_SIZE, IMG_SIZE), scale=(0.8, 1.0), ratio=(3/4, 4/3)),
+    A.HorizontalFlip(),
+    A.VerticalFlip(),
+    A.Rotate(limit=15),
+    A.RandomBrightnessContrast(brightness_limit=0.3, contrast_limit=0.3),
+    A.HueSaturationValue(hue_shift_limit=10, sat_shift_limit=15, val_shift_limit=10),
+    A.RandomGamma(gamma_limit=(80,120)),
+    A.CoarseDropout(max_holes=8, max_height=IMG_SIZE//8, max_width=IMG_SIZE//8, fill_value=0, p=1.0),
+    A.Normalize(mean=(0.485,0.456,0.406), std=(0.229,0.224,0.225)),
+    ToTensorV2()
+])
+
+val_transforms = A.Compose([
+    A.Resize(height=IMG_SIZE, width=IMG_SIZE),
+    A.Normalize(mean=(0.485,0.456,0.406), std=(0.229,0.224,0.225)),
+    ToTensorV2()
+])
+
+
+# =====================
+# DATASET CLASS
+# =====================
+class RetinoDataset(Dataset):
+    def __init__(self, df, augment=False):
+        self.df = df
+        self.augment = augment
+        self.transform = train_transforms if augment else val_transforms
+
+    def __len__(self):
+        return len(self.df)
+
+    def __getitem__(self, idx):
+        row = self.df.iloc[idx]
+        img = np.array(Image.open(row["image_path"]).convert("RGB"))
+        label = int(row["label"])
+        img = self.transform(image=img)["image"]
+        return img, label
+
+# =====================
+# FOCAL LOSS
+# =====================
+class FocalLoss(nn.Module):
+    def __init__(self, alpha=1, gamma=2, reduction="mean"):
+        super().__init__()
+        self.alpha, self.gamma, self.reduction = alpha, gamma, reduction
+
+    def forward(self, inputs, targets):
+        ce_loss = F.cross_entropy(inputs, targets, reduction="none")
+        pt = torch.exp(-ce_loss)
+        loss = self.alpha * (1-pt)**self.gamma * ce_loss
+        return loss.mean() if self.reduction=="mean" else loss.sum()
+
+# =====================
+# LOAD DATA
 # =====================
 def load_datasets():
     manifests = []
@@ -63,59 +118,7 @@ def load_datasets():
 
     full_df = pd.concat(manifests, ignore_index=True)
     full_df = full_df.sample(frac=1, random_state=42).reset_index(drop=True)
-
     return full_df
-
-
-# =====================
-# DATASET CLASS
-# =====================
-# =====================
-# DATASET CLASS
-# =====================
-class RetinoDataset(Dataset):
-    def __init__(self, df, augment=False):
-        self.df = df
-        self.augment = augment
-
-        imagenet_norm = transforms.Normalize(
-            mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225]
-        )
-
-        self.transform_train = transforms.Compose([
-            transforms.Resize((IMG_SIZE, IMG_SIZE)),
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomVerticalFlip(),
-            transforms.RandomRotation(15),
-            transforms.ColorJitter(brightness=0.2, contrast=0.2),
-            transforms.RandomResizedCrop(IMG_SIZE, scale=(0.9, 1.0)),
-            transforms.ToTensor(),        # converts [0,255] → [0,1]
-            imagenet_norm,                # 👈 normalize after ToTensor
-        ])
-
-        self.transform_val = transforms.Compose([
-            transforms.Resize((IMG_SIZE, IMG_SIZE)),
-            transforms.ToTensor(),
-            imagenet_norm,                # 👈 normalize here too
-        ])
-
-    def __len__(self):
-        return len(self.df)
-
-    def __getitem__(self, idx):
-        row = self.df.iloc[idx]
-        img = Image.open(row["image_path"]).convert("RGB")  # PIL image
-        label = int(row["label"])
-
-        if self.augment:
-            img = self.transform_train(img)
-        else:
-            img = self.transform_val(img)
-
-        return img, label
-
-
 
 # =====================
 # MODEL
@@ -124,11 +127,10 @@ def get_model(num_classes=NUM_CLASSES):
     model = create_model("tf_efficientnet_b4", pretrained=True, num_classes=num_classes)
     return model
 
-
 # =====================
-# TRAIN LOOP
+# TRAINING LOOP
 # =====================
-def train_model(model, train_loader, val_loader, epochs, optimizer, criterion, stage="head"):
+def train_model(model, train_loader, val_loader, epochs, optimizer, criterion, scheduler=None, stage="head"):
     scaler = GradScaler()
     best_qwk, best_model = -1, None
 
@@ -138,12 +140,10 @@ def train_model(model, train_loader, val_loader, epochs, optimizer, criterion, s
 
         for imgs, labels in tqdm(train_loader, desc=f"{stage} Epoch {epoch}/{epochs}"):
             imgs, labels = imgs.to(DEVICE), labels.to(DEVICE)
-
             optimizer.zero_grad()
             with autocast():
                 outputs = model(imgs)
                 loss = criterion(outputs, labels)
-
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
@@ -152,8 +152,8 @@ def train_model(model, train_loader, val_loader, epochs, optimizer, criterion, s
             preds.extend(outputs.argmax(1).cpu().numpy())
             targets.extend(labels.cpu().numpy())
 
-        train_acc = accuracy_score(targets, preds)
         train_loss /= len(train_loader.dataset)
+        train_acc = accuracy_score(targets, preds)
 
         # Validation
         val_loss, vpreds, vtargets = 0, [], []
@@ -164,17 +164,18 @@ def train_model(model, train_loader, val_loader, epochs, optimizer, criterion, s
                 with autocast():
                     outputs = model(imgs)
                     loss = criterion(outputs, labels)
-
                 val_loss += loss.item() * imgs.size(0)
                 vpreds.extend(outputs.argmax(1).cpu().numpy())
                 vtargets.extend(labels.cpu().numpy())
 
+        val_loss /= len(val_loader.dataset)
         val_acc = accuracy_score(vtargets, vpreds)
         qwk = cohen_kappa_score(vtargets, vpreds, weights="quadratic")
-        val_loss /= len(val_loader.dataset)
 
         print(f"{stage} Epoch {epoch}/{epochs} | Train Loss {train_loss:.4f} | Train Acc {train_acc:.4f} | "
               f"Val Acc {val_acc:.4f} | Val QWK {qwk:.4f}")
+
+        if scheduler: scheduler.step()
 
         if qwk > best_qwk:
             best_qwk = qwk
@@ -183,13 +184,9 @@ def train_model(model, train_loader, val_loader, epochs, optimizer, criterion, s
 
     return best_model
 
-
 # =====================
 # MAIN
 # =====================
-
-
-
 if __name__ == "__main__":
     df = load_datasets()
     train_df, val_df = train_test_split(df, test_size=0.15, stratify=df["label"], random_state=42)
@@ -197,7 +194,7 @@ if __name__ == "__main__":
     train_dataset = RetinoDataset(train_df, augment=True)
     val_dataset = RetinoDataset(val_df, augment=False)
 
-    # Class weights
+    # Weighted sampler
     class_counts = train_df["label"].value_counts().sort_index().values
     weights = 1.0 / torch.tensor(class_counts, dtype=torch.float)
     sample_weights = weights[train_df["label"].values]
@@ -207,20 +204,21 @@ if __name__ == "__main__":
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=2, pin_memory=True)
 
     model = get_model().to(DEVICE)
+    criterion = FocalLoss(alpha=1, gamma=2)
 
-    # Stage 1: train head
+    # Stage 1: Train head
     for p in model.parameters(): p.requires_grad = False
     for p in model.get_classifier().parameters(): p.requires_grad = True
-    optimizer = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=WD)
-    criterion = nn.CrossEntropyLoss(weight=weights.to(DEVICE))
+    optimizer = torch.optim.AdamW(model.parameters(), lr=LR_HEAD, weight_decay=WD)
     train_model(model, train_loader, val_loader, EPOCHS_HEAD, optimizer, criterion, stage="head")
 
-    # Stage 2: fine-tune full model
+    # Stage 2: Fine-tune full model
     for p in model.parameters(): p.requires_grad = True
-    optimizer = torch.optim.AdamW(model.parameters(), lr=LR/10, weight_decay=WD)
-    best_state = train_model(model, train_loader, val_loader, EPOCHS_FINE, optimizer, criterion, stage="finetune")
+    optimizer = torch.optim.AdamW(model.parameters(), lr=LR_FINE, weight_decay=WD)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=EPOCHS_FINE, eta_min=1e-6)
+    best_state = train_model(model, train_loader, val_loader, EPOCHS_FINE, optimizer, criterion, scheduler, stage="finetune")
 
-    print("\n=== Final Evaluation on Validation Set ===")
+    # Final evaluation
     model.load_state_dict(torch.load("best_efficientnet_b4.pth"))
     model.eval()
     vpreds, vtargets = [], []
@@ -235,10 +233,6 @@ if __name__ == "__main__":
     print("Confusion Matrix:\n", confusion_matrix(vtargets, vpreds))
     print("QWK:", cohen_kappa_score(vtargets, vpreds, weights="quadratic"))
     print("Accuracy:", accuracy_score(vtargets, vpreds))
-
-
-
-
 
 
 
