@@ -1,7 +1,8 @@
 # ===============================================
 # train_fundus.py — Full training using tuned hyperparameters
 # ===============================================
-import os, json
+import os
+import json
 from tqdm import tqdm
 from PIL import Image
 import numpy as np
@@ -11,35 +12,43 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from timm import create_model
-from torch.cuda.amp import autocast, GradScaler
+from torch.amp import autocast, GradScaler
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import cohen_kappa_score
 
-
+# =====================
+# CONFIG
+# =====================
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 IMG_SIZE = 224
 NUM_CLASSES = 5
 DATA_DIR = "./datasets/fundus/split_dataset/test"
 
 
-class fundusDataset(Dataset):
+# =====================
+# DATASET
+# =====================
+class FundusDataset(Dataset):
     def __init__(self, img_paths, labels, augment=False):
         self.img_paths = img_paths
         self.labels = labels
-        self.transform = (
-            A.Compose([
-                A.RandomResizedCrop(height=IMG_SIZE, width=IMG_SIZE, scale=(0.8,1.0)),
-                A.HorizontalFlip(), A.VerticalFlip(), A.Rotate(limit=15),
+        if augment:
+            self.transform = A.Compose([
+                A.RandomResizedCrop(size=(IMG_SIZE, IMG_SIZE), scale=(0.8, 1.0)),
+                A.HorizontalFlip(),
+                A.VerticalFlip(),
+                A.Rotate(limit=15),
                 A.Normalize(mean=(0.485,0.456,0.406), std=(0.229,0.224,0.225)),
                 ToTensorV2()
-            ]) if augment else
-            A.Compose([
+            ])
+        else:
+            self.transform = A.Compose([
                 A.Resize(height=IMG_SIZE, width=IMG_SIZE),
                 A.Normalize(mean=(0.485,0.456,0.406), std=(0.229,0.224,0.225)),
                 ToTensorV2()
             ])
-        )
 
     def __len__(self):
         return len(self.img_paths)
@@ -51,35 +60,50 @@ class fundusDataset(Dataset):
         return img, label
 
 
+# =====================
+# FOCAL LOSS
+# =====================
 class FocalLoss(nn.Module):
     def __init__(self, alpha=1, gamma=2):
         super().__init__()
         self.alpha = alpha
         self.gamma = gamma
+
     def forward(self, inputs, targets):
         ce_loss = F.cross_entropy(inputs, targets, reduction="none")
         pt = torch.exp(-ce_loss)
-        return (self.alpha * (1-pt)**self.gamma * ce_loss).mean()
+        loss = self.alpha * (1-pt)**self.gamma * ce_loss
+        return loss.mean()
 
 
+# =====================
+# LOAD DATASET
+# =====================
 def load_fundus_dataset():
     img_paths, labels = [], []
     class_names = sorted(os.listdir(DATA_DIR))
     for label, cls in enumerate(class_names):
         folder = os.path.join(DATA_DIR, cls)
-        if not os.path.isdir(folder): continue
+        if not os.path.isdir(folder):
+            continue
         for file in os.listdir(folder):
-            if file.lower().endswith((".png",".jpg",".jpeg")):
-                img_paths.append(os.path.join(folder,file))
+            if file.lower().endswith((".png", ".jpg", ".jpeg")):
+                img_paths.append(os.path.join(folder, file))
                 labels.append(label)
     return img_paths, labels
 
 
+# =====================
+# MODEL
+# =====================
 def get_model(num_classes=NUM_CLASSES):
     model = create_model("tf_efficientnet_b0", pretrained=True, num_classes=num_classes)
     return model
 
 
+# =====================
+# TRAINING FUNCTION
+# =====================
 def train_full(hyperparams, epochs=20):
     # Load dataset
     img_paths, labels = load_fundus_dataset()
@@ -87,17 +111,17 @@ def train_full(hyperparams, epochs=20):
         img_paths, labels, test_size=0.2, stratify=labels, random_state=42
     )
 
-    train_ds = fundusDataset(train_paths, train_labels, augment=True)
-    val_ds = fundusDataset(val_paths, val_labels, augment=False)
+    train_ds = FundusDataset(train_paths, train_labels, augment=True)
+    val_ds = FundusDataset(val_paths, val_labels, augment=False)
 
-    train_loader = DataLoader(train_ds, batch_size=hyperparams["batch_size"], shuffle=True, num_workers=2)
-    val_loader = DataLoader(val_ds, batch_size=hyperparams["batch_size"], shuffle=False, num_workers=2)
+    train_loader = DataLoader(train_ds, batch_size=hyperparams["batch_size"], shuffle=True, num_workers=4)
+    val_loader = DataLoader(val_ds, batch_size=hyperparams["batch_size"], shuffle=False, num_workers=4)
 
     model = get_model().to(DEVICE)
     criterion = FocalLoss(alpha=1, gamma=hyperparams["focal_gamma"])
     optimizer = torch.optim.AdamW(model.parameters(), lr=hyperparams["lr"], weight_decay=hyperparams["weight_decay"])
 
-    scaler = GradScaler()
+    scaler = GradScaler(device="cuda")
     best_qwk = -1
     best_model = None
 
@@ -106,23 +130,24 @@ def train_full(hyperparams, epochs=20):
         for imgs, labels in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}", leave=False):
             imgs, labels = imgs.to(DEVICE), labels.to(DEVICE)
             optimizer.zero_grad()
-            with autocast():
+            with autocast(device_type="cuda"):
                 outputs = model(imgs)
                 loss = criterion(outputs, labels)
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
 
-        # Evaluate
+        # Evaluation
         model.eval()
         preds, targets = [], []
         with torch.no_grad():
             for imgs, labels in val_loader:
                 imgs, labels = imgs.to(DEVICE), labels.to(DEVICE)
-                with autocast():
+                with autocast(device_type="cuda"):
                     outputs = model(imgs)
                 preds.extend(outputs.argmax(1).cpu().numpy())
                 targets.extend(labels.cpu().numpy())
+
         qwk = cohen_kappa_score(targets, preds, weights="quadratic")
         print(f"Epoch {epoch+1}/{epochs} | Val QWK: {qwk:.4f}")
 
@@ -136,6 +161,9 @@ def train_full(hyperparams, epochs=20):
     print("Best QWK:", best_qwk)
 
 
+# =====================
+# MAIN
+# =====================
 if __name__ == "__main__":
     # Load hyperparameters from tuning
     with open("best_hyperparams.json", "r") as f:
