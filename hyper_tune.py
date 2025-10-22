@@ -30,7 +30,7 @@ class fundusDataset(Dataset):
         self.labels = labels
         self.transform = (
             A.Compose([
-                A.RandomResizedCrop(height=IMG_SIZE, width=IMG_SIZE, scale=(0.8,1.0)),
+                A.RandomResizedCrop(size=(IMG_SIZE, IMG_SIZE), scale=(0.8, 1.0)),
                 A.HorizontalFlip(), A.VerticalFlip(), A.Rotate(limit=15),
                 A.Normalize(mean=(0.485,0.456,0.406), std=(0.229,0.224,0.225)),
                 ToTensorV2()
