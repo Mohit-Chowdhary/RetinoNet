@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Tool - Retina.AI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="page-app">
+    <!-- Global Header -->
+    <header class="global-header">
+        <div class="header-container">
+            <a href="index.html" class="logo">Retina.AI</a>
+            <nav class="main-nav">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="features.html" class="nav-link">Features</a>
+                <a href="about.html" class="nav-link">About</a>
+                <a href="app.html" class="btn btn--primary active">Launch Tool</a>
+            </nav>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Retina Scan Loader (Full Screen Overlay) -->
+    <div class="retina-scan-loader" id="retinaScanLoader" style="display: none;">
+        <div class="scan-container">
+            <!-- Eye Icon Container -->
+            <div class="eye-scan-wrapper">
+                <svg class="eye-icon-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Outer Circle (Iris) -->
+                    ircle class="iris-outline" cx="100" cy="100" r="80" fill="none" stroke="currentColor" stroke-width="2"2"/>
+                    
+                    <!-- Scanning Circle Animation -->
+                    ircle class="scanning-circle" cx="100" cy="100" r="80" fill="none" stroke="#"#167FFF" stroke-width="3"/>
+                    
+                    <!-- Neural Network Lines (Abstract Retina) -->
+                    <g class="neural-network">
+                        <path class="neural-path" d="M 60 60 L 100 100 L 140 60" fill="none" stroke="#167FFF" stroke-width="1.5"/>
+                        <path class="neural-path" d="M 60 140 L 100 100 L 140 140" fill="none" stroke="#167FFF" stroke-width="1.5"/>
+                        <path class="neural-path" d="M 100 50 L 100 100 L 100 150" fill="none" stroke="#167FFF" stroke-width="1.5"/>
+                        <path class="neural-path" d="M 50 100 L 100 100 L 150 100" fill="none" stroke="#167FFF" stroke-width="1.5"/>
+                        
+                        <!-- Connection Dots -->
+                        ircle class="neural-dot" cx="60" cy="60" r="3"3" fill="#167FFF"/>
+                        ircle class="neural-dot" cx="140" cy="60" r="3" fill="#167FFFFF"/>
+                        ircle class="neural-dot" cx="60" cy="140" r="3"3" fill="#167FFF"/>
+                        ircle class="neural-dot" cx="140" cy="140" r="3" fill="#"#167FFF"/>
+                        ircle class="neural-dot" cx="100" cy="50" r="3" fill="#167FFFFF"/>
+                        ircle class="neural-dot" cx="100" cy="150" r="3" fill="#16767FFF"/>
+                        ircle class="neural-dot" cx="50" cy="100" r="="3" fill="#167FFF"/>
+                        ircle class="neural-dot" cx="150" cy="100" r="3" fillll="#167FFF"/>
+                        ircle class="neural-dot" cx="100" cy="10000" r="4" fill="#167FFF"/>
+                    </g>
+                    
+                    <!-- Pupil -->
+                    ircle class="pupil" cx="100" cy="100" r="30" fill="rgba(22, 127,7, 255, 0.2)"/>
+                </svg>
+                
+                <!-- Laser Scanner Overlay -->
+                <div class="laser-scanner"></div>
+            </div>
+            
+            <!-- Loading Text with Animation -->
+            <div class="scan-text">
+                <h3 class="scan-title">Analyzing Retinal Image</h3>
+                <p class="scan-subtitle">
+                    <span class="scan-step" id="scanStep">Initializing AI model</span>
+                    <span class="scan-dots">
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </span>
+                </p>
+                <div class="scan-progress">
+                    <div class="scan-progress-bar" id="scanProgressBar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <main class="app-main">
+        <div class="app-container">
+            
+            <!-- Upload Section -->
+            <section class="upload-section" id="uploadSection">
+                <div class="upload-container">
+                    <h1 class="app-title">Fundus Image Analysis</h1>
+                    <p class="app-subtitle">Upload a retinal fundus image for AI-powered diabetic retinopathy detection</p>
+
+                    <!-- Enhanced Upload Area -->
+                    <div class="upload-area" id="uploadArea">
+                        <!-- Default Content (Idle State) -->
+                        <div class="upload-area__default-content">
+                            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <p class="upload-text">Drag & Drop fundus image here</p>
+                            <p class="upload-subtext">or click to browse files</p>
+                            <button class="btn btn--primary" id="browseBtn">Browse Files</button>
+                        </div>
+
+                        <!-- Drag-Over Content -->
+                        <div class="upload-area__drag-content">
+                            <span class="drag-icon">✓</span>
+                            <p class="upload-text">Drop image to begin analysis!</p>
+                        </div>
+
+                        <input type="file" id="fileInput" accept="image/png,image/jpeg,image/jpg" hidden>
+                    </div>
+                </div>
+
+                <!-- Image Preview -->
+                <div class="preview-container" id="previewContainer" style="display: none;">
+                    <div class="preview-header">
+                        <h3 class="preview-title">Selected Image</h3>
+                        <button class="close-btn" id="closePreview">×</button>
+                    </div>
+                    <img id="imagePreview" src="" alt="Preview" class="preview-image">
+                    <div class="preview-info">
+                        <p id="fileName" class="preview-filename"></p>
+                        <p id="fileSize" class="preview-filesize"></p>
+                    </div>
+                    <button class="btn btn--primary btn--large" id="analyzeBtn">
+                        <span id="analyzeBtnText">Analyze Image</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section" id="resultsSection" style="display: none;">
+                <div class="section-header">
+                    <h2 class="section-title">Analysis Results</h2>
+                </div>
+
+                <!-- Confidence Alert -->
+                <div class="confidence-alert" id="confidenceAlert" style="display: none;"></div>
+
+                <!-- Two Column Layout -->
+                <div class="results-grid">
+                    
+                    <!-- Left Column: Data -->
+                    <div class="results-column">
+                        
+                        <!-- Main Prediction -->
+                        <div class="result-section">
+                            <h3 class="section-subtitle">Diagnosis</h3>
+                            <div class="diagnosis-content">
+                                <div class="diagnosis-header">
+                                    <div class="severity-badge" id="severityBadge">
+                                        <span id="severityClass"></span>
+                                    </div>
+                                    <div class="confidence-display">
+                                        <span class="confidence-value" id="confidenceValue"></span>
+                                        <span class="confidence-label">confidence</span>
+                                    </div>
+                                </div>
+                                <p class="diagnosis-description" id="predictionDescription"></p>
+                                <div class="confidence-level-badge" id="confidenceLevelBadge"></div>
+                            </div>
+                        </div>
+
+                        <!-- Probability Distribution -->
+                        <div class="result-section">
+                            <h3 class="section-subtitle">Severity Level Probabilities</h3>
+                            <div class="probability-bars" id="probabilityBars"></div>
+                        </div>
+
+                        <!-- Classification Details -->
+                        <div class="result-section">
+                            <h3 class="section-subtitle">Classification Details</h3>
+                            <div class="details-grid">
+                                <div class="detail-item">
+                                    <span class="detail-label">Predicted Class</span>
+                                    <span class="detail-value" id="predictedClassName"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Model</span>
+                                    <span class="detail-value">EfficientNet-B0</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Image Size</span>
+                                    <span class="detail-value" id="imageSize"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Analysis Time</span>
+                                    <span class="detail-value" id="analysisTime"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Right Column: Visuals -->
+                    <div class="results-column">
+                        
+                        <!-- Explainability Card -->
+                        <div class="result-section" id="explainabilitySection" style="display: none;">
+                            <h3 class="section-subtitle">AI Decision Explanation</h3>
+                            <p class="section-description">
+                                Heatmap visualization showing regions that influenced the AI's diagnosis
+                            </p>
+                            <div class="heatmap-grid">
+                                <div class="heatmap-item">
+                                    <span class="heatmap-label">Original</span>
+                                    <img id="originalImage" src="" alt="Original" class="heatmap-image">
+                                </div>
+                                <div class="heatmap-item">
+                                    <span class="heatmap-label">AI Focus</span>
+                                    <img id="heatmapOverlay" src="" alt="Heatmap" class="heatmap-image">
+                                </div>
+                            </div>
+                            <div class="heatmap-legend">
+                                <span class="legend-title">Impact Level:</span>
+                                <span class="legend-item"><span class="color-dot" style="background: #0000ff;"></span>Low</span>
+                                <span class="legend-item"><span class="color-dot" style="background: #00ff00;"></span>Medium</span>
+                                <span class="legend-item"><span class="color-dot" style="background: #ffff00;"></span>High</span>
+                                <span class="legend-item"><span class="color-dot" style="background: #ff0000;"></span>Critical</span>
+                            </div>
+                        </div>
+
+                        <!-- Quality Assessment -->
+                        <div class="result-section">
+                            <h3 class="section-subtitle">Image Quality Assessment</h3>
+                            <div class="quality-overview">
+                                <div class="quality-score-circle" id="qualityScoreCircle">
+                                    <span class="quality-score-number" id="qualityScoreNumber">--</span>
+                                    <span class="quality-score-label">Quality Score</span>
+                                </div>
+                                <div class="quality-status" id="qualityStatus"></div>
+                            </div>
+                            <div class="quality-metrics" id="qualityMetrics"></div>
+                            <div class="quality-issues" id="qualityIssues" style="display: none;">
+                                <h4 class="issue-title">Issues Detected</h4>
+                                <ul id="issuesList" class="issue-list"></ul>
+                            </div>
+                            <div class="quality-recommendations" id="qualityRecommendations" style="display: none;">
+                                <h4 class="recommendation-title">Recommendations</h4>
+                                <ul id="recommendationsList" class="recommendation-list"></ul>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button class="btn btn--secondary" id="newAnalysisBtn">Analyze Another Image</button>
+                    <button class="btn btn--secondary" id="downloadResultsBtn">Download Report</button>
+                </div>
+            </section>
+
+            <!-- Error Message -->
+            <div class="error-message" id="errorMessage" style="display: none;"></div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="global-footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <a href="index.html" class="logo">Retina.AI</a>
+                    <p class="footer-tagline">Advanced AI for diabetic retinopathy detection</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Platform</h4>
+                        <a href="index.html">Home</a>
+                        <a href="features.html">Features</a>
+                        <a href="about.html">About</a>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Technology</h4>
+                        <a href="#">EfficientNet-B0</a>
+                        <a href="#">Grad-CAM XAI</a>
+                        <a href="#">Quality Assessment</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p class="footer-stats">Model Performance: 90.27% Accuracy | QWK: 0.9374 | Response Time: &lt;2s</p>
+                <p class="footer-copyright">© 2025 Retina.AI. Advanced Medical Imaging Analysis.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Features - Retina.AI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Global Header -->
+    <header class="global-header">
+        <div class="header-container">
+            <a href="index.html" class="logo">Retina.AI</a>
+            <nav class="main-nav">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="features.html" class="nav-link active">Features</a>
+                <a href="about.html" class="nav-link">About</a>
+                <a href="app.html" class="btn btn--primary">Launch Tool</a>
+            </nav>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Page Header -->
+    <section class="page-header">
+        <div class="content-container">
+            <h1 class="page-title">Platform Features</h1>
+            <p class="page-description">
+                Advanced AI technology combined with clinical-grade analysis tools for comprehensive diabetic retinopathy screening.
+            </p>
+        </div>
+    </section>
+
+    <!-- Features Detail -->
+    <section class="features-detail">
+        <div class="content-container">
+            
+            <!-- Feature 1: Explainable AI -->
+            <div class="feature-detail-item">
+                <div class="feature-detail-content">
+                    <span class="feature-badge">Explainability</span>
+                    <h2 class="feature-detail-title">Grad-CAM Visual Explanations</h2>
+                    <p class="feature-detail-description">
+                        Our Explainable AI (XAI) system uses Gradient-weighted Class Activation Mapping (Grad-CAM) 
+                        to generate intuitive heatmaps that highlight the specific regions of the retinal image that 
+                        influenced the AI's diagnostic decision.
+                    </p>
+                    <ul class="feature-list">
+                        <li>Visual heatmap overlays on original fundus images</li>
+                        <li>Color-coded impact levels (Low, Medium, High, Critical)</li>
+                        <li>Side-by-side comparison views</li>
+                        <li>Identifies anatomical features: microaneurysms, hemorrhages, exudates</li>
+                        <li>Builds trust and clinical confidence in AI decisions</li>
+                    </ul>
+                </div>
+                <div class="feature-detail-visual">
+                    <div class="feature-visual-placeholder">
+                        <svg viewBox="0 0 300 200" class="placeholder-svg">
+                            <rect width="300" height="200" fill="#1A2332" rx="8"/>
+                            <circle cx="150" cy="100" r="60" fill="#167FFF" opacity="0.3"/>
+                            <circle cx="150" cy="100" r="40" fill="#167FFF" opacity="0.5"/>
+                            <circle cx="150" cy="100" r="20" fill="#167FFF" opacity="0.8"/>
+                            <text x="150" y="105" text-anchor="middle" fill="#ADBBD2" font-size="14">Grad-CAM</text>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature 2: Quality Assessment -->
+            <div class="feature-detail-item reverse">
+                <div class="feature-detail-content">
+                    <span class="feature-badge">Quality Control</span>
+                    <h2 class="feature-detail-title">Automated Image Quality Assessment</h2>
+                    <p class="feature-detail-description">
+                        Before analysis, every fundus image undergoes a comprehensive 7-metric quality evaluation 
+                        to ensure diagnostic reliability. Our system provides real-time feedback and actionable 
+                        recommendations for image improvement.
+                    </p>
+                    <ul class="feature-list">
+                        <li><strong>Blur Detection:</strong> Laplacian variance method for sharpness analysis</li>
+                        <li><strong>Illumination Assessment:</strong> Automatic exposure evaluation</li>
+                        <li><strong>Contrast Evaluation:</strong> Image clarity measurement</li>
+                        <li><strong>Artifact Detection:</strong> Identifies eyelashes, dust, obstructions</li>
+                        <li><strong>Centering Validation:</strong> Optic disc positioning check</li>
+                        <li><strong>Resolution Check:</strong> Ensures adequate image size</li>
+                        <li><strong>Color Balance:</strong> Detects color cast issues</li>
+                    </ul>
+                </div>
+                <div class="feature-detail-visual">
+                    <div class="feature-visual-placeholder">
+                        <svg viewBox="0 0 300 200" class="placeholder-svg">
+                            <rect width="300" height="200" fill="#1A2332" rx="8"/>
+                            <circle cx="150" cy="100" r="70" fill="none" stroke="#10b981" stroke-width="3"/>
+                            <text x="150" y="105" text-anchor="middle" fill="#FFFFFF" font-size="32" font-weight="700">95</text>
+                            <text x="150" y="125" text-anchor="middle" fill="#ADBBD2" font-size="12">Quality Score</text>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature 3: Confidence Scoring -->
+            <div class="feature-detail-item">
+                <div class="feature-detail-content">
+                    <span class="feature-badge">Clinical Safety</span>
+                    <h2 class="feature-detail-title">Confidence-Based Review Flagging</h2>
+                    <p class="feature-detail-description">
+                        Our three-tier confidence assessment system automatically identifies cases that require 
+                        specialist review, ensuring clinical safety and appropriate use of automated screening.
+                    </p>
+                    <ul class="feature-list">
+                        <li><strong>High Confidence (≥85%):</strong> Suitable for automated screening</li>
+                        <li><strong>Moderate Confidence (65-85%):</strong> Consider specialist review</li>
+                        <li><strong>Low Confidence (&lt;65%):</strong> Automatic flagging for expert review</li>
+                        <li><strong>Ambiguity Detection:</strong> Identifies similar probabilities across classes</li>
+                        <li><strong>Clinical Recommendations:</strong> Clear guidance for next steps</li>
+                    </ul>
+                </div>
+                <div class="feature-detail-visual">
+                    <div class="feature-visual-placeholder">
+                        <svg viewBox="0 0 300 200" class="placeholder-svg">
+                            <rect width="300" height="200" fill="#1A2332" rx="8"/>
+                            <rect x="50" y="60" width="200" height="20" fill="#10b981" rx="10"/>
+                            <rect x="50" y="90" width="150" height="20" fill="#f59e0b" rx="10"/>
+                            <rect x="50" y="120" width="100" height="20" fill="#FF455F" rx="10"/>
+                            <text x="150" y="170" text-anchor="middle" fill="#ADBBD2" font-size="12">Confidence Levels</text>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature 4: Real-time Analysis -->
+            <div class="feature-detail-item reverse">
+                <div class="feature-detail-content">
+                    <span class="feature-badge">Performance</span>
+                    <h2 class="feature-detail-title">Fast & Accurate Predictions</h2>
+                    <p class="feature-detail-description">
+                        Built on EfficientNet-B0 architecture optimized for medical imaging, our model delivers 
+                        clinical-grade accuracy with sub-2-second response times.
+                    </p>
+                    <ul class="feature-list">
+                        <li><strong>90.27% Accuracy:</strong> Validated on comprehensive DR datasets</li>
+                        <li><strong>0.9374 QWK Score:</strong> Excellent inter-rater agreement</li>
+                        <li><strong>&lt;2 Second Analysis:</strong> Real-time diagnostic support</li>
+                        <li><strong>5-Class Classification:</strong> No DR, Mild, Moderate, Severe, Proliferative</li>
+                        <li><strong>Focal Loss Training:</strong> Handles class imbalance effectively</li>
+                    </ul>
+                </div>
+                <div class="feature-detail-visual">
+                    <div class="feature-visual-placeholder">
+                        <svg viewBox="0 0 300 200" class="placeholder-svg">
+                            <rect width="300" height="200" fill="#1A2332" rx="8"/>
+                            <text x="150" y="80" text-anchor="middle" fill="#FFFFFF" font-size="48" font-weight="800">90.27%</text>
+                            <text x="150" y="105" text-anchor="middle" fill="#ADBBD2" font-size="14">Accuracy</text>
+                            <text x="150" y="140" text-anchor="middle" fill="#FFFFFF" font-size="32" font-weight="700">&lt;2s</text>
+                            <text x="150" y="160" text-anchor="middle" fill="#ADBBD2" font-size="12">Response Time</text>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="content-container">
+            <h2 class="cta-title">Experience the Future of DR Screening</h2>
+            <p class="cta-description">
+                Try our AI-powered analysis tool with your own fundus images and see the difference 
+                explainable AI makes in clinical confidence.
+            </p>
+            <a href="app.html" class="btn btn--primary btn--large">Start Analysis Now</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="global-footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <a href="index.html" class="logo">Retina.AI</a>
+                    <p class="footer-tagline">Advanced AI for diabetic retinopathy detection</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Platform</h4>
+                        <a href="index.html">Home</a>
+                        <a href="features.html">Features</a>
+                        <a href="about.html">About</a>
+                        <a href="app.html">Launch Tool</a>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Technology</h4>
+                        <a href="#">EfficientNet-B0</a>
+                        <a href="#">Grad-CAM XAI</a>
+                        <a href="#">Quality Assessment</a>
+                        <a href="#">API Documentation</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p class="footer-stats">Model Performance: 90.27% Accuracy | QWK: 0.9374 | Response Time: &lt;2s</p>
+                <p class="footer-copyright">© 2025 Retina.AI. Advanced Medical Imaging Analysis.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="home.js"></script>
+</body>
+</html>

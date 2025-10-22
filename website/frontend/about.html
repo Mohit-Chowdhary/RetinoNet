@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - Retina.AI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Global Header -->
+    <header class="global-header">
+        <div class="header-container">
+            <a href="index.html" class="logo">Retina.AI</a>
+            <nav class="main-nav">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="features.html" class="nav-link">Features</a>
+                <a href="about.html" class="nav-link active">About</a>
+                <a href="app.html" class="btn btn--primary">Launch Tool</a>
+            </nav>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Page Header -->
+    <section class="page-header">
+        <div class="content-container">
+            <h1 class="page-title">About Retina.AI</h1>
+            <p class="page-description">
+                Advancing diabetic retinopathy screening through explainable artificial intelligence 
+                and automated quality assessment.
+            </p>
+        </div>
+    </section>
+
+    <!-- Mission Section -->
+    <section class="about-section">
+        <div class="content-container">
+            <div class="about-grid">
+                <div class="about-content">
+                    <h2 class="section-subtitle">Our Mission</h2>
+                    <p class="about-text">
+                        Diabetic retinopathy is a leading cause of vision loss worldwide, affecting millions 
+                        of people with diabetes. Early detection is crucial, but manual screening is time-consuming 
+                        and requires specialized expertise that isn't always available.
+                    </p>
+                    <p class="about-text">
+                        Retina.AI was developed to bridge this gap by providing healthcare providers with an 
+                        AI-powered screening tool that combines clinical-grade accuracy with explainable 
+                        decision-making and automated quality control.
+                    </p>
+                </div>
+                <div class="about-stats-grid">
+                    <div class="about-stat">
+                        <div class="about-stat-value">90.27%</div>
+                        <div class="about-stat-label">Classification Accuracy</div>
+                    </div>
+                    <div class="about-stat">
+                        <div class="about-stat-value">0.9374</div>
+                        <div class="about-stat-label">Quadratic Weighted Kappa</div>
+                    </div>
+                    <div class="about-stat">
+                        <div class="about-stat-value">&lt;2s</div>
+                        <div class="about-stat-label">Average Analysis Time</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technology Section -->
+    <section class="about-section">
+        <div class="content-container">
+            <h2 class="section-title">Technology & Methodology</h2>
+            
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <h3 class="tech-title">Deep Learning Architecture</h3>
+                    <p class="tech-description">
+                        Built on EfficientNet-B0, a state-of-the-art convolutional neural network optimized 
+                        for medical imaging. The model was trained using transfer learning with ImageNet 
+                        pre-trained weights, then fine-tuned on comprehensive diabetic retinopathy datasets.
+                    </p>
+                </div>
+                
+                <div class="tech-item">
+                    <h3 class="tech-title">Focal Loss Training</h3>
+                    <p class="tech-description">
+                        To handle class imbalance in DR datasets, we implemented Focal Loss instead of 
+                        standard cross-entropy. This technique focuses learning on hard-to-classify samples 
+                        and improves performance across all severity levels.
+                    </p>
+                </div>
+                
+                <div class="tech-item">
+                    <h3 class="tech-title">Hyperparameter Optimization</h3>
+                    <p class="tech-description">
+                        Used Optuna framework for automated hyperparameter tuning, optimizing learning rate, 
+                        weight decay, focal loss gamma, and batch size. Final model selected based on 
+                        validation set Quadratic Weighted Kappa score.
+                    </p>
+                </div>
+                
+                <div class="tech-item">
+                    <h3 class="tech-title">Explainable AI</h3>
+                    <p class="tech-description">
+                        Integrated Grad-CAM (Gradient-weighted Class Activation Mapping) to generate visual 
+                        explanations for every diagnosis. This builds trust by showing clinicians exactly 
+                        which retinal features influenced the AI's decision.
+                    </p>
+                </div>
+                
+                <div class="tech-item">
+                    <h3 class="tech-title">Quality Assessment Pipeline</h3>
+                    <p class="tech-description">
+                        Seven-metric quality evaluation system using OpenCV for blur detection (Laplacian 
+                        variance), illumination assessment, contrast analysis, artifact detection, centering 
+                        validation, resolution check, and color balance evaluation.
+                    </p>
+                </div>
+                
+                <div class="tech-item">
+                    <h3 class="tech-title">Clinical Validation</h3>
+                    <p class="tech-description">
+                        Model performance evaluated using industry-standard metrics: overall accuracy, 
+                        per-class precision/recall/F1-score, confusion matrix analysis, and Quadratic 
+                        Weighted Kappa for ordinal severity assessment.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Performance Section -->
+    <section class="about-section">
+        <div class="content-container">
+            <h2 class="section-title">Model Performance</h2>
+            
+            <div class="performance-table-container">
+                <table class="performance-table">
+                    <thead>
+                        <tr>
+                            <th>Severity Class</th>
+                            <th>Precision</th>
+                            <th>Recall</th>
+                            <th>F1-Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>No DR (Class 0)</strong></td>
+                            <td>92.1%</td>
+                            <td>95.7%</td>
+                            <td>93.9%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Mild (Class 1)</strong></td>
+                            <td>86.1%</td>
+                            <td>89.7%</td>
+                            <td>87.9%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Moderate (Class 2)</strong></td>
+                            <td>92.6%</td>
+                            <td>82.3%</td>
+                            <td>87.2%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Severe (Class 3)</strong></td>
+                            <td>90.5%</td>
+                            <td>88.4%</td>
+                            <td>89.5%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Proliferative (Class 4)</strong></td>
+                            <td>88.2%</td>
+                            <td>93.4%</td>
+                            <td>90.7%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="performance-summary">
+                <p class="performance-text">
+                    <strong>Overall Accuracy:</strong> 90.27% | 
+                    <strong>Quadratic Weighted Kappa:</strong> 0.9374
+                </p>
+                <p class="performance-note">
+                    The high QWK score (>0.93) indicates strong agreement with expert ophthalmologist 
+                    diagnoses, accounting for the ordinal nature of DR severity levels.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="content-container">
+            <h2 class="cta-title">Ready to See It in Action?</h2>
+            <p class="cta-description">
+                Experience the power of explainable AI for diabetic retinopathy screening.
+            </p>
+            <a href="app.html" class="btn btn--primary btn--large">Launch Analysis Tool</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="global-footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <a href="index.html" class="logo">Retina.AI</a>
+                    <p class="footer-tagline">Advanced AI for diabetic retinopathy detection</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Platform</h4>
+                        <a href="index.html">Home</a>
+                        <a href="features.html">Features</a>
+                        <a href="about.html">About</a>
+                        <a href="app.html">Launch Tool</a>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Technology</h4>
+                        <a href="#">EfficientNet-B0</a>
+                        <a href="#">Grad-CAM XAI</a>
+                        <a href="#">Quality Assessment</a>
+                        <a href="#">API Documentation</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p class="footer-stats">Model Performance: 90.27% Accuracy | QWK: 0.9374 | Response Time: &lt;2s</p>
+                <p class="footer-copyright">© 2025 Retina.AI. Advanced Medical Imaging Analysis.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="home.js"></script>
+</body>
+</html>
