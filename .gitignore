@@ -5,3 +5,4 @@ datasets/
 .history/
 .history
 best_hyperparams.json
+fundus_model_best.pth
