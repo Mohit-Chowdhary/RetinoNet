@@ -1,10 +1,12 @@
 # ===============================================
-# train_fundus.py — Full training using tuned hyperparameters
+# hyper_tune_fundus.py — Hyperparameter Search for fundus Dataset
 # ===============================================
 import os, json
-from tqdm import tqdm
-from PIL import Image
 import numpy as np
+from tqdm import tqdm
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import cohen_kappa_score
+from PIL import Image
 
 import torch
 import torch.nn as nn
@@ -14,6 +16,7 @@ from timm import create_model
 from torch.cuda.amp import autocast, GradScaler
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
+import optuna
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 IMG_SIZE = 224
@@ -49,17 +52,6 @@ class fundusDataset(Dataset):
         return img, label
 
 
-class FocalLoss(nn.Module):
-    def __init__(self, alpha=1, gamma=2):
-        super().__init__()
-        self.alpha = alpha
-        self.gamma = gamma
-    def forward(self, inputs, targets):
-        ce_loss = F.cross_entropy(inputs, targets, reduction="none")
-        pt = torch.exp(-ce_loss)
-        return (self.alpha * (1-pt)**self.gamma * ce_loss).mean()
-
-
 def load_fundus_dataset():
     img_paths, labels = [], []
     class_names = sorted(os.listdir(DATA_DIR))
@@ -73,32 +65,25 @@ def load_fundus_dataset():
     return img_paths, labels
 
 
+class FocalLoss(nn.Module):
+    def __init__(self, alpha=1, gamma=2):
+        super().__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+    def forward(self, inputs, targets):
+        ce_loss = F.cross_entropy(inputs, targets, reduction="none")
+        pt = torch.exp(-ce_loss)
+        return (self.alpha * (1-pt)**self.gamma * ce_loss).mean()
+
+
 def get_model(num_classes=NUM_CLASSES):
     model = create_model("tf_efficientnet_b0", pretrained=True, num_classes=num_classes)
     return model
 
 
-def train_full(hyperparams, epochs=20):
-    # Load dataset
-    img_paths, labels = load_fundus_dataset()
-    train_paths, val_paths, train_labels, val_labels = train_test_split(
-        img_paths, labels, test_size=0.2, stratify=labels, random_state=42
-    )
-
-    train_ds = fundusDataset(train_paths, train_labels, augment=True)
-    val_ds = fundusDataset(val_paths, val_labels, augment=False)
-
-    train_loader = DataLoader(train_ds, batch_size=hyperparams["batch_size"], shuffle=True, num_workers=2)
-    val_loader = DataLoader(val_ds, batch_size=hyperparams["batch_size"], shuffle=False, num_workers=2)
-
-    model = get_model().to(DEVICE)
-    criterion = FocalLoss(alpha=1, gamma=hyperparams["focal_gamma"])
-    optimizer = torch.optim.AdamW(model.parameters(), lr=hyperparams["lr"], weight_decay=hyperparams["weight_decay"])
-
+def train_short(model, train_loader, val_loader, optimizer, criterion, epochs=3):
     scaler = GradScaler()
     best_qwk = -1
-    best_model = None
-
     for epoch in range(epochs):
         model.train()
         for imgs, labels in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}", leave=False):
@@ -111,7 +96,7 @@ def train_full(hyperparams, epochs=20):
             scaler.step(optimizer)
             scaler.update()
 
-        # Evaluate
+        # Eval
         model.eval()
         preds, targets = [], []
         with torch.no_grad():
@@ -122,23 +107,43 @@ def train_full(hyperparams, epochs=20):
                 preds.extend(outputs.argmax(1).cpu().numpy())
                 targets.extend(labels.cpu().numpy())
         qwk = cohen_kappa_score(targets, preds, weights="quadratic")
-        print(f"Epoch {epoch+1}/{epochs} | Val QWK: {qwk:.4f}")
+        best_qwk = max(best_qwk, qwk)
+    return best_qwk
 
-        if qwk > best_qwk:
-            best_qwk = qwk
-            best_model = model.state_dict()
 
-    # Save best model
-    torch.save(best_model, "fundus_model_best.pth")
-    print("✅ Training complete. Model saved as fundus_model_best.pth")
-    print("Best QWK:", best_qwk)
+def objective(trial):
+    lr = trial.suggest_loguniform("lr", 1e-5, 1e-3)
+    wd = trial.suggest_loguniform("weight_decay", 1e-6, 1e-3)
+    gamma = trial.suggest_uniform("focal_gamma", 1.0, 3.0)
+    batch_size = trial.suggest_categorical("batch_size", [4,8,16])
+
+    img_paths, labels = load_fundus_dataset()
+    train_paths, val_paths, train_labels, val_labels = train_test_split(
+        img_paths, labels, test_size=0.2, stratify=labels, random_state=42
+    )
+
+    train_ds = fundusDataset(train_paths, train_labels, augment=True)
+    val_ds = fundusDataset(val_paths, val_labels, augment=False)
+
+    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=2)
+    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=2)
+
+    model = get_model().to(DEVICE)
+    criterion = FocalLoss(alpha=1, gamma=gamma)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=wd)
+
+    return train_short(model, train_loader, val_loader, optimizer, criterion)
 
 
 if __name__ == "__main__":
-    # Load hyperparameters from tuning
-    with open("best_hyperparams.json", "r") as f:
-        best_hyperparams = json.load(f)
-    print("Using hyperparameters:", best_hyperparams)
+    study = optuna.create_study(direction="maximize")
+    study.optimize(objective, n_trials=10)
 
-    # Run full training
-    train_full(best_hyperparams, epochs=25)
+    print("\nBest Hyperparameters:")
+    print(study.best_trial.params)
+    print("Best QWK:", study.best_value)
+
+    # Save for training
+    with open("best_hyperparams.json", "w") as f:
+        json.dump(study.best_trial.params, f)
+    print("✅ Saved best_hyperparams.json")

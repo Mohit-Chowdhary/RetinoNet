@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 # Config
 # -----------------------
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-DATA_DIR = "./datasets/funfus/split_dataset/test"
+DATA_DIR = "./datasets/fundus/split_dataset/test"
 MODEL_SAVE_PATH = "./best_efficientnet_b4.pth"  # make sure B4 weights exist here
 IMG_SIZE = 448
 BATCH_SIZE = 16
@@ -49,7 +49,7 @@ val_transform = A.Compose([
     ToTensorV2()
 ])
 
-class FunfusDataset(Dataset):
+class fundusDataset(Dataset):
     def __init__(self, df, transform=None):
         self.df = df.reset_index(drop=True)
         self.transform = transform
@@ -96,7 +96,7 @@ def main():
     manifest = build_manifest(DATA_DIR)
     print("Total samples:", len(manifest))
 
-    test_ds = FunfusDataset(manifest, transform=val_transform)
+    test_ds = fundusDataset(manifest, transform=val_transform)
     test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE, shuffle=False, num_workers=4, pin_memory=True)
 
     print("Creating EfficientNet-B4 model and loading weights...")
@@ -109,7 +109,7 @@ def main():
 
     acc, f1, qwk, preds, labels = evaluate_model(model, test_loader)
 
-    print("\nResults on Funfus Test Set:")
+    print("\nResults on fundus Test Set:")
     print(f"Accuracy: {acc:.4f}")
     print(f"Macro F1: {f1:.4f}")
     print(f"Quadratic Weighted Kappa: {qwk:.4f}")
@@ -120,7 +120,7 @@ def main():
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
     plt.xlabel("Predicted")
     plt.ylabel("True")
-    plt.title("Confusion Matrix — Funfus Test Set")
+    plt.title("Confusion Matrix — fundus Test Set")
     plt.show()
 
 if __name__ == "__main__":
