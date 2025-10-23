@@ -17,7 +17,8 @@ app = Flask(__name__, static_folder='frontend')
 CORS(app)
 
 # Configuration
-MODEL_PATH = 'best_model.pth'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # path to /website
+MODEL_PATH = os.path.abspath(os.path.join(BASE_DIR, '..', 'fundus_model_best.pth'))
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 CLASS_NAMES = ['No DR', 'Mild', 'Moderate', 'Severe', 'Proliferative DR']
 SEVERITY_DESCRIPTIONS = {
