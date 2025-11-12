@@ -92,6 +92,11 @@ pip install -r requirements.txt
 
 ## 🚀 Usage  
 
+### 🔍 Hyperparameter Tuning  
+```bash
+python hyper_tune.py --config best_hyperparams.json
+```
+
 ### 🏋️ Train the Model  
 ```bash
 python train.py --config best_hyperparams.json
@@ -105,11 +110,6 @@ python test.py --model path/to/trained_model.pth --config best_hyperparams.json
 ### 📈 Plot Performance  
 ```bash
 python plot.py --results path/to/results.json
-```
-
-### 🔍 Hyperparameter Tuning  
-```bash
-python hyper_tune.py --config best_hyperparams.json
 ```
 
 ### 🧠 Inspect Model  
