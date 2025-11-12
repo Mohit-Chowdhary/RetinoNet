@@ -44,7 +44,8 @@ RetinoNet/
 Make sure you have the following installed:  
 - Python 3.8+  
 - pip  
-- (Optional) CUDA-enabled GPU for faster training  
+- (Optional) CUDA-enabled GPU for faster training
+- Dataset: https://www.kaggle.com/datasets/sehastrajits/fundus-aptosddridirdeyepacsmessidor
 
 ### Recommended Dependencies  
 Your `requirements.txt` should include packages like:  
